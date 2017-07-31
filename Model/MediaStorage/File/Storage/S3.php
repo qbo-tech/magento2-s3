@@ -40,6 +40,11 @@ class S3 extends DataObject
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
+    
+    /**
+     * Maximum gzip compression level
+     */
+    const GZIP_COMPRESSION_LEVEL = 9;
 
     private $objects = [];
 
@@ -196,13 +201,9 @@ class S3 extends DataObject
     {
         foreach ($files as $file) {
             try {
-                $this->client->putObject([
-                    'ACL' => 'public-read',
-                    'Body' => $file['content'],
-                    'Bucket' => $this->getBucket(),
-                    'ContentType' => \GuzzleHttp\Psr7\mimetype_from_filename($file['filename']),
-                    'Key' => $file['directory'] . '/' . $file['filename']
-                ]);
+                $data = $this->getObjectData($file);
+                $this->client->putObject($data);
+                
             } catch (\Exception $e) {
                 $this->errors[] = $e->getMessage();
                 $this->logger->critical($e);
@@ -215,19 +216,41 @@ class S3 extends DataObject
     public function saveFile($filename)
     {
         $file = $this->mediaHelper->collectFileInfo($this->getMediaBaseDirectory(), $filename);
-
+        
         try {
-            $this->client->putObject([
-                'ACL' => 'public-read',
-                'Body' => $file['content'],
-                'Bucket' => $this->getBucket(),
-                'ContentType' => \GuzzleHttp\Psr7\mimetype_from_filename($file['filename']),
-                'Key' => $filename
-            ]);
+            $data = $this->getObjectData($file);
+            $this->client->putObject($data);
+            
         } catch (\Exception $e) {
         }
 
         return $this;
+    }
+    
+    public function getObjectData($file)
+    {
+        $data = [
+            'ACL' => 'public-read',
+            'Body' => $file,
+            'Bucket' => $this->getBucket(),
+            'ContentType' => \GuzzleHttp\Psr7\mimetype_from_filename($file['filename']),
+            'Key' => $file['directory'] . '/' . $file['filename']
+        ];
+
+        if($this->helper->getIsGzipEnabled()) {
+            $_file = gzencode(
+                file_get_contents($this->getMediaBaseDirectory() . DIRECTORY_SEPARATOR . $file['directory'] . DIRECTORY_SEPARATOR . $file['filename']),
+                self::GZIP_COMPRESSION_LEVEL
+            );
+            $data['Body'] = $_file ;
+            $data['ContentEncoding'] = 'gzip';
+        }
+
+        if($this->helper->getCacheControlHeader()){
+            $data['CacheControl'] = $this->helper->getCacheControlHeader();
+        }
+        
+        return $data;
     }
 
     public function fileExists($filename)

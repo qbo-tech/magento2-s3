@@ -1,5 +1,5 @@
 {
-  "name": "thaiphan/magento2-s3",
+  "name": "qbo-tech/magento2-s3",
   "description": "Use Amazon S3 as the file storage backend for your store.",
   "type": "magento2-module",
   "license": "MIT",
@@ -7,6 +7,10 @@
     {
       "name": "Thai Phan",
       "email": "thai@outlook.com"
+    },
+    {
+      "name": "Jose Castaneda",
+      "email": "jose@qbo.tech"
     }
   ],
   "autoload": {
