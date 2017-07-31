@@ -40,4 +40,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         return $this->scopeConfig->getValue('thai_s3/general/bucket');
     }
+    
+    public function getIsGzipEnabled()
+    {
+        return $this->scopeConfig->getValue('thai_s3/general/compress');
+    }
+    
+    public function getCacheControlHeader()
+    {
+        return $this->scopeConfig->getValue('thai_s3/general/cache_control');
+    }
 }
